@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+# Test runs drop screenshots here; keep them out of the repo
+tests/*.png
+# Backups hold a real schedule. Never commit one.
+our-week-backup-*.json
+# Never commit keys or secrets
+.env
+*.key
