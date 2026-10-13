@@ -1,0 +1,1732 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Our Week: Eloise &amp; Toby</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F7F4EE">
+<meta name="apple-mobile-web-app-title" content="Our Week">
+<style>
+  :root {
+    --cream: #F7F4EE;
+    --card: #FFFFFF;
+    --ink: #182B36;
+    --slate: #40535D;
+    --teal: #0D6670;
+    --teal-pale: #E4F2F0;
+    --pink: #E0187F;
+    --pink-pale: #FCE4EF;
+    --indigo: #332A85;
+    --indigo-pale: #E9E7F7;
+    --green: #1E7B45;
+    --green-pale: #E3F3E8;
+    --warn: #B33C00;
+    --line: #D5DCDF;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  html, body { overflow-x: clip; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 16px calc(100px + env(safe-area-inset-bottom));
+  }
+  /* On wide screens the Week view opens out; the controls stay a comfortable width */
+  body[data-view="week"] .app { max-width: 1200px; }
+  .controls { max-width: 480px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+  /* Demo banner */
+  .demo {
+    font-size: 13px; color: var(--slate);
+    background: var(--teal-pale); border-radius: 8px;
+    padding: 6px 10px; margin-bottom: 12px;
+  }
+
+  /* Heading: day and date first */
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .today-badge {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: #fff; background: var(--teal);
+    border-radius: 6px; padding: 2px 8px; margin-bottom: 4px;
+  }
+  h1 { margin: 0; font-size: 26px; line-height: 1.15; }
+  .save {
+    flex: none; font-size: 14px; font-weight: 600; color: var(--slate);
+    border: 1px solid var(--line); background: var(--card);
+    border-radius: 999px; padding: 4px 10px; white-space: nowrap;
+    opacity: 0; transition: opacity .4s;
+  }
+  .save.show { opacity: 1; }
+  .save.err { color: var(--warn); border-color: var(--warn); }
+
+  /* Shown only when a save has failed; stays until it works */
+  .sync-banner {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 20;
+    width: calc(100% - 24px); max-width: 456px; background: #fff; color: var(--ink);
+    border: 2px solid var(--warn); border-radius: 14px; padding: 10px 12px; box-shadow: 0 4px 16px rgba(24, 43, 54, .18);
+  }
+  body.has-banner .app { padding-bottom: calc(260px + env(safe-area-inset-bottom)); }
+  .sync-banner p { margin: 0; font-weight: 700; }
+  .sync-banner small { display: block; margin-top: 2px; color: var(--slate); font-size: 13px; overflow-wrap: anywhere; }
+  .sync-banner .primary-btn { margin-top: 8px; min-height: 44px; width: 100%; }
+
+  /* Sign-in screens */
+  .gate { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+  .gate-card { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px 20px; }
+  .gate-card h1 { text-align: center; }
+  .gate-sub { margin: 2px 0 18px; text-align: center; color: var(--slate); }
+  .gate-card .lbl { margin-top: 14px; }
+  .gate-card h2 { margin: 0 0 6px; font-size: 20px; }
+  .gate-card p { margin: 0 0 8px; }
+  .gate-msg { color: var(--slate); }
+  .primary-btn { display: block; width: 100%; min-height: 48px; margin-top: 12px; border: 0; border-radius: 12px;
+    background: var(--teal); color: #fff; font-weight: 700; font-size: 17px; }
+  .primary-btn:disabled { opacity: .6; cursor: default; }
+  .outline-btn { display: block; width: 100%; min-height: 48px; margin-top: 10px; border: 1.5px solid var(--teal); border-radius: 12px;
+    background: var(--card); color: var(--teal); font-weight: 700; }
+  .gate-card .link-btn, .dlg-inner .link-btn { display: block; margin: 4px 0 0 auto; }
+  .gate-card .gate-help { margin: 14px 0 0; font-size: 14px; text-align: center; }
+  .dlg-inner .lbl { margin-top: 14px; }
+
+  /* Footer: backup, restore, sign out */
+  .foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--slate); font-size: 14px; }
+  .foot p { margin: 0 0 4px; overflow-wrap: anywhere; }
+  .foot-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .foot-btn { min-height: 44px; padding: 0 16px; border: 1.5px solid var(--slate); border-radius: 12px; background: var(--card); font-weight: 700; color: var(--ink); }
+  @media (min-width: 900px) { body[data-view="today"] .foot { grid-column: 1 / -1; } }
+
+  /* Confirm box */
+  dialog.dlg { border: 0; border-radius: 18px; padding: 0; width: calc(100% - 32px); max-width: 420px; background: var(--cream); color: var(--ink); }
+  dialog.dlg::backdrop { background: rgba(24, 43, 54, .5); }
+  .dlg-inner { padding: 20px 18px 18px; }
+  .dlg-inner h2 { margin: 0 0 8px; font-size: 20px; }
+  .dlg-inner p { margin: 0 0 8px; }
+  .dlg-inner .primary-btn, .dlg-inner .outline-btn { margin-top: 10px; }
+
+  /* Week box: navigation, and the day strip in Today view */
+  .week { margin: 14px 0 12px; background: var(--teal-pale); border-radius: 14px; padding: 10px; }
+  .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .week-nav .label { font-weight: 700; font-size: 15px; text-align: center; }
+  .arrow {
+    min-width: 44px; min-height: 44px; border: 0; background: transparent;
+    font-size: 22px; color: var(--teal); border-radius: 10px;
+  }
+  .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .day {
+    min-height: 60px; border: 1px solid transparent; background: var(--card);
+    border-radius: 10px; padding: 4px 0; text-align: center; line-height: 1.15;
+  }
+  .day .dow { display: block; font-size: 12px; color: var(--slate); }
+  .day .num { display: block; font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .mon { display: block; font-size: 11px; font-weight: 600; color: var(--slate); }
+  .day.is-today:not(.selected) { border-color: var(--teal); }
+  .day.selected { background: var(--teal); color: #fff; }
+  .day.selected .dow, .day.selected .mon { color: #fff; }
+  .jump { display: block; width: 100%; margin-top: 8px; min-height: 44px; border: 1.5px solid var(--teal);
+    background: var(--card); color: var(--teal); border-radius: 10px; font-weight: 700; }
+
+  /* Segmented controls: the Both / Eloise / Toby filter and the form's Type and For */
+  .filter, .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 4px 0 6px;
+    border: 1px solid var(--teal); border-radius: 12px; overflow: hidden; background: var(--card); }
+  .filter button, .seg button { min-height: 44px; border: 0; background: transparent; font-weight: 600; color: var(--teal);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .filter button + button, .seg button + button { border-left: 1px solid var(--teal); }
+  .filter button[aria-pressed="true"], .seg button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+  .filter-note { margin: 0 0 14px; font-size: 14px; color: var(--slate); }
+
+  /* Sections */
+  h2.group {
+    margin: 20px 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--slate);
+  }
+
+  /* Cards */
+  .card {
+    display: grid; grid-template-columns: 8px 1fr auto; align-items: stretch;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    overflow: hidden; margin-bottom: 10px;
+  }
+  .card.flash { outline: 3px solid var(--teal); outline-offset: 2px; }
+  .stripe.eloise { background: var(--pink); }
+  .stripe.toby { background: var(--indigo); }
+  .stripe.both { background: linear-gradient(to bottom, var(--pink) 50%, var(--indigo) 50%); }
+  .body {
+    display: block; width: 100%; min-width: 0; padding: 10px 12px; margin: 0;
+    border: 0; background: none; text-align: left; color: inherit;
+  }
+  .body:focus-visible { outline-offset: -4px; }
+  .time { display: block; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .name { display: block; margin: 2px 0 8px; font-size: 17px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+    color: var(--ink); border: 1px solid; border-radius: 999px; padding: 2px 10px;
+  }
+  .chip.eloise { background: var(--pink-pale); border-color: var(--pink); }
+  .chip.toby { background: var(--indigo-pale); border-color: var(--indigo); }
+  .chip.both { background: var(--card); border-color: var(--line); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .dot.eloise { background: var(--pink); }
+  .dot.toby { background: var(--indigo); }
+  .dot.both { background: linear-gradient(to bottom, var(--pink) 50%, var(--indigo) 50%); }
+  .type { font-size: 13px; font-weight: 700; color: var(--slate); letter-spacing: .04em; text-transform: uppercase; }
+  .status { font-size: 13px; font-weight: 600; color: var(--slate); }
+  .status.done { color: var(--ink); background: var(--green-pale); border: 1px solid var(--green);
+    border-radius: 999px; padding: 2px 10px; }
+
+  .action { display: flex; align-items: center; padding: 0 12px 0 0; }
+  .btn {
+    min-height: 44px; min-width: 96px; padding: 0 14px; border-radius: 12px;
+    border: 2px solid var(--teal); background: var(--card); color: var(--teal); font-weight: 700;
+  }
+  .btn.undo { border-color: var(--line); color: var(--slate); }
+  .card.is-done .name { color: var(--slate); }
+  /* Week view cards: the button sits underneath so columns can be narrow */
+  .card.compact { grid-template-columns: 8px minmax(0, 1fr); }
+  .card.compact .action { grid-column: 2; padding: 0 12px 10px; }
+  .card.compact .btn { width: 100%; }
+
+  .empty { text-align: center; color: var(--slate); background: var(--card);
+    border: 1px dashed var(--line); border-radius: 14px; padding: 28px 16px; }
+
+  /* Week view */
+  .weekgrid { display: grid; gap: 8px 12px; margin-top: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 700px) { .weekgrid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+  body[data-view="week"] .week-nav { margin-bottom: 0; }
+  .daysec { min-width: 0; padding-bottom: 8px; }
+  .daysec-head { margin-bottom: 8px; border-bottom: 2px solid var(--line); }
+  .daysec.is-today .daysec-head { border-bottom-color: var(--teal); }
+  .daylink { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 0; border: 0; background: none; text-align: center;
+    font-size: 21px; font-weight: 800; color: var(--ink); }
+  .daylink .tag { margin-left: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: #fff; background: var(--teal); border-radius: 6px; padding: 2px 8px; vertical-align: 2px; }
+  @media (min-width: 700px) {
+    .daylink { min-height: 64px; padding-top: 6px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; }
+    .daylink .tag { display: block; width: max-content; margin: 4px 0 0; font-size: 11px; padding: 1px 6px; }
+  }
+  /* Wide screens, Week view: the header, week box and filter spread across the full width */
+  @media (min-width: 700px) {
+    body[data-view="week"] .controls { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+      column-gap: 16px; align-items: start; }
+    body[data-view="week"] .demo, body[data-view="week"] .head { grid-column: 1 / -1; }
+    body[data-view="week"] .head { margin-bottom: 12px; }
+    body[data-view="week"] .week { grid-column: 1; grid-row: 3 / 5; margin: 0; align-self: stretch;
+      display: flex; flex-direction: column; justify-content: center; }
+    body[data-view="week"] .filter { grid-column: 2; grid-row: 3; margin: 0; }
+    body[data-view="week"] .filter-note { grid-column: 2; grid-row: 4; margin: 6px 0 0; }
+  }
+
+  /* Wide screens, Today view: controls in a left column, the day's entries in a wider column beside them */
+  @media (min-width: 900px) {
+    body[data-view="today"] .app { max-width: 1040px; display: grid; grid-template-columns: 360px minmax(0, 1fr);
+      column-gap: 40px; align-items: start; }
+    body[data-view="today"] .controls { max-width: none; position: sticky; top: 12px; }
+    body[data-view="today"] #todayView { padding-top: 4px; }
+  }
+
+  /* Bottom bar */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--card); border-top: 1px solid var(--line);
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+  }
+  .bar-inner { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; }
+  .tab { min-height: 48px; border: 0; border-radius: 12px; background: transparent; font-weight: 700; color: var(--slate); }
+  .tab[aria-current="page"] { background: var(--teal-pale); color: var(--teal); }
+  .tab.add { background: var(--teal); color: #fff; font-size: 18px; }
+
+  /* Toast, with an optional action such as Undo */
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom));
+    background: var(--ink); color: #fff; padding: 4px 8px 4px 16px; border-radius: 10px; font-size: 15px;
+    max-width: calc(100% - 32px); display: flex; align-items: center; gap: 4px; min-height: 44px;
+  }
+  .toast button { border: 0; background: none; color: #fff; font-weight: 700; text-decoration: underline;
+    min-height: 44px; padding: 0 12px; }
+
+  /* Add / edit sheet */
+  dialog.sheet {
+    border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 480px; height: fit-content;
+    max-height: 92dvh; overflow: auto; border-radius: 20px 20px 0 0;
+    background: var(--cream); color: var(--ink);
+  }
+  dialog.sheet::backdrop { background: rgba(24, 43, 54, .5); }
+  .sheet-inner { padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    position: sticky; top: 0; z-index: 3; background: var(--cream); margin: -16px -16px 0; padding: 12px 16px 8px;
+    border-bottom: 1px solid var(--line); }
+  .head-save { min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--teal); color: #fff; font-weight: 700; }
+  .sheet-head h2 { margin: 0; font-size: 20px; }
+  .link-btn { min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--teal); font-weight: 700; }
+  fieldset { border: 0; padding: 0; margin: 14px 0 0; min-width: 0; }
+  legend, .lbl { padding: 0; margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--slate); display: block; }
+  .field {
+    width: 100%; min-width: 0; max-width: 100%; min-height: 48px; padding: 8px 12px; font: inherit; font-size: 18px; color: var(--ink);
+    background: var(--card); border: 1.5px solid var(--slate); border-radius: 12px;
+  }
+  .sheet .seg { margin: 0; border-width: 1.5px; }
+  .pick-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .pick-days button { min-height: 60px; border: 1px solid var(--slate); background: var(--card); border-radius: 10px;
+    line-height: 1.15; padding: 4px 0; }
+  .pick-days .dow { display: block; font-size: 12px; }
+  .pick-days .num { display: block; font-size: 17px; font-weight: 700; }
+  .pick-days button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .pick-days button[aria-pressed="true"] .mon { color: #fff; }
+  .whens { display: flex; flex-wrap: wrap; gap: 8px; }
+  .whens button { min-height: 44px; padding: 0 14px; border: 1px solid var(--slate); background: var(--card);
+    border-radius: 999px; font-weight: 600; }
+  .whens button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .times { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 10px; }
+  .times > div { min-width: 0; }
+  .field:disabled { background: var(--cream); color: var(--slate); border-color: var(--line); }
+  .until { margin-top: 10px; min-height: 44px; padding: 0 14px; border: 1px solid var(--slate); background: var(--card);
+    border-radius: 999px; font-weight: 600; }
+  .until[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .more { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--slate);
+    border-radius: 12px; background: var(--card); text-align: left; }
+  .more-label { font-weight: 700; color: var(--slate); }
+  .more-val { flex: 1; min-width: 0; font-weight: 600; color: var(--teal); text-align: right; }
+  .more-arrow { color: var(--slate); transition: transform .15s; }
+  .more[aria-expanded="true"] .more-arrow { transform: rotate(180deg); }
+  #repPanel { margin-top: 10px; }
+  .every { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-weight: 600; }
+  .every input.field { width: 84px; }
+  .every select.field { width: auto; min-width: 0; padding-right: 8px; }
+  .scope { margin-top: 14px; padding: 14px; border: 1.5px solid var(--teal); border-radius: 14px; background: var(--teal-pale); }
+  .scope p { margin: 0 0 10px; font-weight: 700; }
+  .scope button { display: block; width: 100%; min-height: 48px; margin-top: 8px; border: 1.5px solid var(--teal); border-radius: 12px;
+    background: var(--card); color: var(--teal); font-weight: 700; }
+  .scope button.primary { background: var(--teal); color: #fff; }
+  .note { margin: 8px 0 0; font-size: 14px; color: var(--slate); }
+  .error { min-height: 24px; margin: 12px 0 0; color: var(--warn); font-weight: 700; }
+  .delete { width: 100%; min-height: 48px; margin-top: 10px; border: 1.5px solid var(--slate); border-radius: 14px;
+    background: var(--card); font-weight: 700; }
+</style>
+</head>
+<body data-view="today">
+
+<!-- Sign-in screens: shown instead of the planner until you are signed in -->
+<div class="gate" id="gate" hidden>
+  <div class="gate-card">
+    <h1>Our Week</h1>
+    <p class="gate-sub">Eloise &amp; Toby</p>
+
+    <section id="gLoading" hidden>
+      <p role="status" id="gLoadingText">Checking you're signed in…</p>
+    </section>
+
+    <section id="gSignin" hidden>
+      <p class="gate-msg" id="siInfo"></p>
+      <label class="lbl" for="siEmail">Email</label>
+      <input class="field" id="siEmail" type="email" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <label class="lbl" for="siPass">Password</label>
+      <input class="field" id="siPass" type="password" autocomplete="current-password" autocapitalize="none">
+      <button type="button" class="link-btn pw-show" data-showpw="siPass">Show password</button>
+      <p class="error" id="siMsg" role="alert"></p>
+      <button type="button" class="primary-btn" id="siGo">Sign in</button>
+      <p class="gate-msg gate-help">Forgotten your password? Ask Mum!</p>
+    </section>
+
+    <section id="gSetpw" hidden>
+      <h2 id="spTitle">Choose a password</h2>
+      <p class="gate-msg">At least 10 characters. A few words strung together works well.</p>
+      <label class="lbl" for="spPass">New password</label>
+      <input class="field" id="spPass" type="password" autocomplete="new-password" autocapitalize="none">
+      <label class="lbl" for="spPass2">Type it again</label>
+      <input class="field" id="spPass2" type="password" autocomplete="new-password" autocapitalize="none">
+      <button type="button" class="link-btn pw-show" data-showpw="spPass,spPass2">Show passwords</button>
+      <p class="error" id="spMsg" role="alert"></p>
+      <button type="button" class="primary-btn" id="spGo">Save password</button>
+    </section>
+
+    <section id="gDenied" hidden>
+      <h2>This account isn't on the list</h2>
+      <p class="gate-msg">You're signed in, but this planner is only for Eloise and Toby. Sign out and use the email that was invited.</p>
+      <button type="button" class="outline-btn" data-gate-signout>Sign out</button>
+    </section>
+
+    <section id="gError" hidden>
+      <h2 id="geTitle">Something went wrong</h2>
+      <p class="gate-msg" id="geText"></p>
+      <button type="button" class="primary-btn" id="geRetry">Try again</button>
+      <button type="button" class="link-btn" data-gate-signout>Sign out</button>
+    </section>
+  </div>
+</div>
+
+<main class="app" id="appMain" hidden>
+  <div class="controls">
+    <p class="demo" id="demoNote" hidden>Demo with made-up entries. Add, edit, delete and moving between weeks work, but nothing is kept if you refresh the page. Tap an entry to change it.</p>
+
+    <header class="head">
+      <div>
+        <span class="today-badge" id="todayBadge">Today</span>
+        <h1 id="dateTitle"></h1>
+      </div>
+      <span class="save" id="saveState" role="status" aria-live="polite"></span>
+    </header>
+
+    <nav class="week" aria-label="Week">
+      <div class="week-nav">
+        <button class="arrow" data-nav="-1" aria-label="Previous week">‹</button>
+        <span class="label" id="weekLabel"></span>
+        <button class="arrow" data-nav="1" aria-label="Next week">›</button>
+      </div>
+      <div class="days" id="days"></div>
+      <button class="jump" id="jump" data-jump hidden>Back to today</button>
+    </nav>
+
+    <div class="filter" role="group" aria-label="Whose entries to show" id="filter">
+      <button data-who="all" aria-pressed="true">Both</button>
+      <button data-who="eloise" aria-pressed="false">Eloise</button>
+      <button data-who="toby" aria-pressed="false">Toby</button>
+    </div>
+    <p class="filter-note" id="filterNote"></p>
+  </div>
+
+  <div id="todayView"></div>
+  <div id="weekView" class="weekgrid" hidden></div>
+
+  <footer class="foot" id="foot" hidden>
+    <p id="footWho"></p>
+    <p id="footLive"></p>
+    <div class="foot-btns">
+      <button type="button" class="foot-btn" id="btnBackup">Back up</button>
+      <button type="button" class="foot-btn" id="btnRestore">Restore</button>
+      <button type="button" class="foot-btn" id="btnPassword">Change password</button>
+      <button type="button" class="foot-btn" id="btnSignOut">Sign out</button>
+    </div>
+    <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+  </footer>
+</main>
+
+<div class="bar" id="bar" hidden>
+  <div class="bar-inner">
+    <button class="tab" id="tabToday" data-view="today" aria-current="page">Today</button>
+    <button class="tab add" data-open="add">+ Add</button>
+    <button class="tab" id="tabWeek" data-view="week">Week</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button id="toastAction" hidden></button></div>
+
+<div class="sync-banner" id="syncBanner" role="alert" hidden>
+  <p>Your latest change hasn't saved.</p>
+  <small id="syncDetail">It's still on this screen. Don't close the page until it saves.</small>
+  <button type="button" class="primary-btn" id="syncRetry">Try again</button>
+</div>
+
+<dialog class="dlg" id="pwDlg" aria-labelledby="pwTitle">
+  <div class="dlg-inner">
+    <h2 id="pwTitle">Change your password</h2>
+    <p>At least 10 characters. A few words strung together works well.</p>
+    <label class="lbl" for="cpPass">New password</label>
+    <input class="field" id="cpPass" type="password" autocomplete="new-password" autocapitalize="none">
+    <label class="lbl" for="cpPass2">Type it again</label>
+    <input class="field" id="cpPass2" type="password" autocomplete="new-password" autocapitalize="none">
+    <button type="button" class="link-btn pw-show" data-showpw="cpPass,cpPass2">Show passwords</button>
+    <p class="error" id="cpMsg" role="alert"></p>
+    <button type="button" class="primary-btn" id="cpGo">Save new password</button>
+    <button type="button" class="outline-btn" id="cpCancel">Cancel</button>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg-inner">
+    <h2 id="dlgTitle"></h2>
+    <p id="dlgBody"></p>
+    <div id="dlgBtns"></div>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheetTitle">
+  <form class="sheet-inner" id="entryForm" novalidate>
+    <div class="sheet-head">
+      <button type="button" class="link-btn" data-close>Cancel</button>
+      <h2 id="sheetTitle">Add</h2>
+      <button type="button" class="head-save" data-save>Save</button>
+    </div>
+
+    <div style="margin-top:14px">
+      <label class="lbl" for="fName">What's happening?</label>
+      <input class="field" id="fName" maxlength="120" autocomplete="off" enterkeyhint="done">
+    </div>
+
+    <fieldset>
+      <legend>Type</legend>
+      <div class="seg" id="fType">
+        <button type="button" data-type="task" aria-pressed="true">Task</button>
+        <button type="button" data-type="plan" aria-pressed="false">Plan</button>
+        <button type="button" data-type="shift" aria-pressed="false">Shift</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Day</legend>
+      <div class="pick-days" id="fDays"></div>
+      <p class="note" id="dayNote"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend>For</legend>
+      <div class="seg" id="fOwner">
+        <button type="button" data-owner="eloise" aria-pressed="false"><i class="dot eloise"></i>Eloise</button>
+        <button type="button" data-owner="toby" aria-pressed="false"><i class="dot toby"></i>Toby</button>
+        <button type="button" data-owner="both" aria-pressed="false"><i class="dot both"></i>Both</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>When</legend>
+      <div class="whens" id="fWhen"></div>
+      <div class="times" id="timeBlock" hidden>
+        <div><label class="lbl" for="fStart">Starts</label><input class="field" type="time" id="fStart"></div>
+        <div><label class="lbl" for="fEnd">Finishes (optional)</label><input class="field" type="time" id="fEnd"></div>
+      </div>
+      <button type="button" class="until" id="btnUntil" data-until="close" aria-pressed="false">Until close</button>
+      <p class="note" id="endNote" role="status"></p>
+    </fieldset>
+
+    <fieldset>
+      <button type="button" class="more" id="repToggle" data-reptoggle aria-expanded="false" aria-controls="repPanel">
+        <span class="more-label">Repeat</span><span class="more-val" id="repSummary">Doesn't repeat</span><span class="more-arrow" aria-hidden="true">▾</span>
+      </button>
+      <div id="repPanel" hidden>
+      <div class="whens" id="fRep"></div>
+      <div class="every" id="everyBlock" hidden>
+        <label for="fEvery">Every</label>
+        <input class="field" type="number" inputmode="numeric" min="2" max="26" step="1" id="fEvery">
+        <span>weeks</span>
+      </div>
+      <div class="every" id="weekdayBlock" hidden>
+        <label for="fNth">On the</label>
+        <select class="field" id="fNth" style="width:auto">
+          <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">last</option>
+        </select>
+        <select class="field" id="fWd" style="width:auto" aria-label="Weekday">
+          <option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option>
+          <option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
+        </select>
+      </div>
+      <div class="every" id="monthDayBlock" hidden>
+        <label for="fMonthDay">On the</label>
+        <input class="field" type="number" inputmode="numeric" min="1" max="31" step="1" id="fMonthDay">
+        <span id="monthDaySuffix">th day of the month</span>
+      </div>
+      <div class="every" id="monthsBlock" hidden>
+        <label for="fMonths">Repeat every</label>
+        <input class="field" type="number" inputmode="numeric" min="1" max="12" step="1" id="fMonths">
+        <span id="monthsWord">month</span>
+      </div>
+      <p class="note" id="repNote"></p>
+      </div>
+    </fieldset>
+
+    <div class="scope" id="scopeBox" role="group" aria-labelledby="scopeTitle" hidden>
+      <p id="scopeTitle"></p>
+      <button type="button" class="primary" data-scope="one" id="scopeOne">This week only</button>
+      <button type="button" class="primary" data-scope="future" id="scopeFuture">This and all later weeks</button>
+      <button type="button" data-scope="back">Back</button>
+    </div>
+
+    <p class="error" id="formError" role="alert"></p>
+    <button type="button" class="delete" id="btnDelete" hidden>Delete this entry</button>
+  </form>
+</dialog>
+
+<script src="vendor/supabase-js-2.117.2.js"></script>
+<script>
+  // ---------- Settings ----------
+  // The project address and the publishable key are meant to be public. What protects the data is the
+  // sign-in plus the database's row-level security, not keeping these two values secret.
+  // Your own Supabase project goes here (see README). The publishable key is designed to be public; never put a secret/service_role key in this file.
+  const CONFIG = { url: "https://YOUR-PROJECT-REF.supabase.co", key: "YOUR-PUBLISHABLE-KEY" };
+  const DEMO = new URLSearchParams(location.search).has("demo");   // ?demo shows made-up entries with no sign-in and no saving
+
+  // ---------- Dates (all plain YYYY-MM-DD strings, worked out in UTC so clock changes cannot shift a day) ----------
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const MON3 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const FULL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+  const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+  const toIso = (dt) => dt.toISOString().slice(0, 10);
+  const addDays = (s, n) => { const dt = parse(s); dt.setUTCDate(dt.getUTCDate() + n); return toIso(dt); };
+  const dow = (s) => (parse(s).getUTCDay() + 6) % 7;            // 0 = Monday
+  const weekStart = (s) => addDays(s, -dow(s));
+  const parts = (s) => { const dt = parse(s); return { y: dt.getUTCFullYear(), m: dt.getUTCMonth(), d: dt.getUTCDate() }; };
+  const longDate = (s) => FULL[dow(s)] + " " + parts(s).d + " " + MONTHS[parts(s).m];
+  const shortDate = (s) => DAYS[dow(s)] + " " + parts(s).d + " " + MON3[parts(s).m];
+
+  // Today in London, whatever time zone the device is set to.
+  function todayISO() {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" })
+      .formatToParts(new Date()).map(x => [x.type, x.value]));
+    return p.year + "-" + p.month + "-" + p.day;
+  }
+
+  function weekRange(ws, today) {
+    const s = parts(ws), e = parts(addDays(ws, 6)), ty = parts(today).y;
+    const yr = (y) => (y !== ty ? " " + y : "");
+    if (s.y !== e.y) return s.d + " " + MONTHS[s.m] + " " + s.y + " – " + e.d + " " + MONTHS[e.m] + " " + e.y;
+    if (s.m !== e.m) return s.d + " " + MONTHS[s.m] + " – " + e.d + " " + MONTHS[e.m] + yr(e.y);
+    return s.d + "–" + e.d + " " + MONTHS[s.m] + yr(e.y);
+  }
+  function weekTitle(ws, today) {
+    const diff = Math.round((parse(ws) - parse(weekStart(today))) / (7 * 86400000));
+    if (diff === 0) return "This week";
+    if (diff === 1) return "Next week";
+    if (diff === -1) return "Last week";
+    return "Week of " + parts(ws).d + " " + MONTHS[parts(ws).m];
+  }
+  // Month label on the first chip of a week and on the 1st, so a week crossing months is never ambiguous.
+  const monTag = (s) => (dow(s) === 0 || parts(s).d === 1 ? '<span class="mon">' + MON3[parts(s).m] + "</span>" : "");
+
+  // ---------- Made-up entries, placed relative to today so there is always something to see ----------
+  const T = todayISO();
+  let entries = [], series = [], exceptions = [];
+  function seedDemo() {
+    entries = [
+    { id: 1, date: T, name: "Library books due", owner: "both", type: "task", label: "All day", done: false },
+    { id: 3, date: T, name: "Garden centre shift", owner: "toby", type: "shift", start: "07:00", end: "15:00" },
+    { id: 4, date: T, name: "Post office parcel", owner: "both", type: "task", start: "08:30", done: false },
+    { id: 6, date: T, name: "Dentist", owner: "toby", type: "plan", start: "16:15" },
+    { id: 7, date: T, name: "Collect the dry cleaning and the repeat prescription from the high street", owner: "both", type: "task", start: "17:00", done: false },
+    { id: 8, date: T, name: "Dinner with the neighbours", owner: "both", type: "plan", start: "18:30" },
+    { id: 9, date: addDays(T, 1), name: "Swimming lesson", owner: "eloise", type: "plan", start: "09:30", end: "10:15" },
+    { id: 10, date: addDays(T, 1), name: "Order new bike lights", owner: "toby", type: "task", label: "All day", done: false },
+    { id: 11, date: addDays(T, 2), name: "Bar shift", owner: "toby", type: "shift", start: "17:00", close: true },
+    { id: 12, date: addDays(T, 3), name: "Café shift", owner: "eloise", type: "shift", start: "11:00", end: "19:00" },
+    { id: 13, date: addDays(T, 4), name: "Late shift", owner: "toby", type: "shift", start: "22:00", end: "02:00" },
+    { id: 14, date: addDays(T, -2), name: "Parents' evening", owner: "both", type: "plan", start: "18:00", end: "19:30" },
+    { id: 15, date: addDays(T, -2), name: "Return the faulty kettle", owner: "toby", type: "task", label: "Any time", done: true },
+    { id: 16, date: addDays(T, -7), name: "Garden centre shift", owner: "toby", type: "shift", start: "07:00", end: "15:00" },
+    { id: 17, date: addDays(T, -7), name: "Book boiler service", owner: "both", type: "task", label: "Any time", done: true },
+    { id: 18, date: addDays(T, 7), name: "Eye test", owner: "eloise", type: "plan", start: "10:30" },
+    { id: 19, date: addDays(T, 8), name: "Bar shift", owner: "toby", type: "shift", start: "16:00", close: true }
+  ];
+    seedDemoSeries();
+  }
+
+  // ---------- Repeating entries ----------
+  // A repeating entry is stored once, as a series with a rule. Weeks are worked out from the rule when you look at them,
+  // so a week only shows a repeating entry if the rule says so. One-off entries are never copied anywhere.
+  // An exception changes, skips or ticks off a single occurrence without touching the rest of the series.
+  const T2 = addDays(T, 2);
+  function seedDemoSeries() {
+    series = [
+    { id: "s1", name: "Put bins out", owner: "toby", type: "task", label: "Morning", from: addDays(T, -14), last: null, rule: { kind: "weeks", every: 1 } },
+    { id: "s2", name: "Café shift", owner: "eloise", type: "shift", start: "12:00", end: "20:00", from: T, last: null, rule: { kind: "weeks", every: 2 } },
+    { id: "s3", name: "Book club", owner: "both", type: "plan", start: "19:30", from: T2, last: null, rule: { kind: "monthly", nth: Math.ceil(parts(T2).d / 7), dow: dow(T2) } }
+    ];
+    exceptions = [];
+  }
+  // An exception changes, skips or ticks off one occurrence: { sid, orig, skip?, done?, data? }
+  const FIELDS = ["name", "type", "owner", "start", "end", "label", "close"];
+
+  const weeksBetween = (a, b) => Math.round((parse(weekStart(b)) - parse(weekStart(a))) / (7 * 86400000));
+  const nthOf = (d) => Math.ceil(parts(d).d / 7);
+  const isLastInMonth = (d) => parts(addDays(d, 7)).m !== parts(d).m;
+  function occursOn(s, d) {
+    if (d < s.from || (s.last && d > s.last)) return false;
+    if (s.rule.kind === "weeks") return dow(d) === dow(s.from) && weeksBetween(s.from, d) % s.rule.every === 0;
+    if (monthsBetween(s.from, d) % (s.rule.every || 1) !== 0) return false;
+    if (s.rule.kind === "monthdate") return parts(d).d === Math.min(s.rule.day, daysInMonth(d));   // short months use their last day
+    if (dow(d) !== s.rule.dow) return false;
+    return s.rule.nth === 5 ? isLastInMonth(d) : nthOf(d) === s.rule.nth;
+  }
+  const monthsBetween = (a, b) => (parts(b).y - parts(a).y) * 12 + (parts(b).m - parts(a).m);
+  const daysInMonth = (d) => new Date(Date.UTC(parts(d).y, parts(d).m + 1, 0)).getUTCDate();
+  const ordinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+  // The first day on or after a date that a rule lands on.
+  function firstOnOrAfter(rule, d) {
+    const probe = { from: d, last: null, rule: Object.assign({}, rule, { every: 1 }) };
+    for (let i = 0; i < 70; i++) if (occursOn(probe, addDays(d, i))) return addDays(d, i);
+    return d;
+  }
+  const getEx = (sid, orig) => exceptions.find(x => x.sid === sid && x.orig === orig);
+  function ensureEx(sid, orig) {
+    let x = getEx(sid, orig);
+    if (!x) { x = { sid, orig }; exceptions.push(x); }
+    return x;
+  }
+  function occurrence(s, ex, orig) {
+    const o = {};
+    const src = ex && ex.data ? ex.data : s;
+    FIELDS.forEach(k => { if (src[k] !== undefined) o[k] = src[k]; });
+    o.id = s.id + "@" + orig;
+    o.date = ex && ex.data ? ex.data.date : orig;
+    o.seriesId = s.id; o.orig = orig;
+    if (o.type === "task") o.done = !!(ex && ex.done);
+    return o;
+  }
+  // Everything on one day: one-off entries plus whatever the series say.
+  function entriesOn(d) {
+    const out = entries.filter(e => e.date === d);
+    series.forEach(s => {
+      if (!occursOn(s, d)) return;
+      const ex = getEx(s.id, d);
+      if (ex && (ex.skip || (ex.data && ex.data.date !== d))) return;
+      out.push(occurrence(s, ex, d));
+    });
+    exceptions.forEach(ex => {
+      if (ex.skip || !ex.data || ex.data.date !== d || ex.orig === d) return;
+      const s = series.find(x => x.id === ex.sid);
+      if (s) out.push(occurrence(s, ex, ex.orig));
+    });
+    return out;
+  }
+  function findEntry(id) {
+    id = String(id);
+    if (id.includes("@")) {
+      const [sid, orig] = id.split("@");
+      const s = series.find(x => x.id === sid);
+      return s ? occurrence(s, getEx(sid, orig), orig) : null;
+    }
+    return entries.find(x => String(x.id) === id) || null;
+  }
+  const datePlain = (d) => FULL[dow(d)] + " " + ordinal(parts(d).d) + " " + MONTHS[parts(d).m];
+  const ORD = ["", "1st", "2nd", "3rd", "4th", "last"];
+  function ruleFromForm() {
+    if (f.rep === "weekly") return { kind: "weeks", every: 1 };
+    if (f.rep === "fortnight") return { kind: "weeks", every: 2 };
+    if (f.rep === "custom") return { kind: "weeks", every: f.every };
+    if (f.rep === "monthly") return { kind: "monthly", nth: f.nth, dow: f.wd, every: f.months };
+    if (f.rep === "monthdate") return { kind: "monthdate", day: f.monthDay, every: f.months };
+    return null;
+  }
+  function repKindOf(rule) {
+    if (!rule) return "off";
+    if (rule.kind === "monthly") return "monthly";
+    if (rule.kind === "monthdate") return "monthdate";
+    return rule.every === 1 ? "weekly" : rule.every === 2 ? "fortnight" : "custom";
+  }
+  const clone = (x) => JSON.parse(JSON.stringify(x));
+  // A fresh id made on this device, so two phones can add entries at the same moment without clashing.
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    const b = crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+    return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+  }
+
+  const TYPE_WORD = { task: "Task", plan: "Plan", shift: "Shift" };
+  const OWNER_WORD = { eloise: "Eloise", toby: "Toby", both: "Both" };
+  const WHEN = [["any","Any time"],["allday","All day"],["morning","Morning"],["afternoon","Afternoon"],["evening","Evening"],["time","Set a time"]];
+  const LABEL = { any: "Any time", allday: "All day", morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
+
+  let view = "today";                 // "today" or "week"
+  let selectedDate = T;               // always inside the week being viewed
+  let who = "all";
+  let f = null;                       // the form's working copy while the sheet is open
+  let pending = null;                 // a save or delete waiting for 'this week only / all later weeks'
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function timeText(e) {
+    if (e.start && e.close) return e.start + "–close";
+    if (e.start && e.end) return e.start + "–" + e.end;
+    if (e.start) return "From " + e.start;
+    return e.label;
+  }
+
+  function cardHtml(e, compact) {
+    const isTask = e.type === "task";
+    const owner = e.owner;
+    const chip = owner === "both"
+      ? '<span class="chip both"><i class="dot both"></i>Both</span>'
+      : '<span class="chip ' + owner + '">' + OWNER_WORD[owner] + '</span>';
+    const status = isTask
+      ? (e.done ? '<span class="status done">Done ✓</span>' : '<span class="status">To do</span>')
+      : "";
+    const action = isTask
+      ? '<div class="action"><button class="btn ' + (e.done ? "undo" : "") + '" data-toggle="' + e.id + '" aria-label="' +
+        (e.done ? "Undo done: " : "Mark done: ") + esc(e.name) + '">' + (e.done ? "Undo" : "Mark done") + '</button></div>'
+      : "";
+    return '<article class="card ' + (e.done ? "is-done " : "") + (compact ? "compact" : "") + '" data-id="' + e.id + '">' +
+      '<div class="stripe ' + owner + '" aria-hidden="true"></div>' +
+      '<button class="body" data-edit="' + e.id + '"><span class="time">' + esc(timeText(e)) + '</span>' +
+      '<span class="name">' + esc(e.name) + '</span>' +
+      '<span class="meta">' + chip + '<span class="type">' + TYPE_WORD[e.type] + '</span>' + status +
+      (e.seriesId ? '<span class="type">↻ Repeats</span>' : "") + '</span></button>' +
+      action + '</article>';
+  }
+
+  const visible = (e) => who === "all" || e.owner === who || e.owner === "both";
+  const untimedOf = (list) => list.filter(e => !e.start);
+  const timedOf = (list) => list.filter(e => e.start).sort((a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name));
+
+  function render() {
+    const today = todayISO();
+    const ws = weekStart(selectedDate);
+    document.body.dataset.view = view;
+
+    // Heading
+    if (view === "today") {
+      $("#dateTitle").textContent = longDate(selectedDate);
+      $("#todayBadge").hidden = selectedDate !== today;
+    } else {
+      $("#dateTitle").textContent = weekTitle(ws, today);
+      $("#todayBadge").hidden = true;
+    }
+    $("#weekLabel").textContent = weekRange(ws, today);
+    $("#jump").hidden = view === "today" ? selectedDate === today : ws === weekStart(today);
+
+    // Tabs
+    [["#tabToday", "today"], ["#tabWeek", "week"]].forEach(([id, v]) => {
+      if (view === v) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
+    });
+
+    // Day strip (Today view only)
+    $("#days").hidden = view !== "today";
+    $("#days").innerHTML = Array.from({ length: 7 }, (_, i) => {
+      const dt = addDays(ws, i);
+      return '<button class="day' + (dt === selectedDate ? " selected" : "") + (dt === today ? " is-today" : "") + '" data-day="' + dt +
+        '" aria-label="' + longDate(dt) + (dt === today ? ", today" : "") + '"' + (dt === selectedDate ? ' aria-current="date"' : "") + '>' +
+        '<span class="dow">' + DAYS[i] + '</span><span class="num">' + parts(dt).d + '</span>' + monTag(dt) + '</button>';
+    }).join("");
+
+    // Filter
+    document.querySelectorAll("#filter button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.who === who)));
+    $("#filterNote").textContent = who === "all" ? "Eloise and Toby's day, including joint entries"
+      : OWNER_WORD[who] + "'s day, including joint entries";
+    if (view === "week") $("#filterNote").textContent = who === "all" ? "Eloise and Toby's week, including joint entries"
+      : OWNER_WORD[who] + "'s week, including joint entries";
+
+    $("#todayView").hidden = view !== "today";
+    $("#weekView").hidden = view !== "week";
+
+    if (view === "today") {
+      const todays = entriesOn(selectedDate).filter(visible);
+      const untimed = untimedOf(todays), timed = timedOf(todays);
+      let html = "";
+      if (!todays.length) html = '<div class="empty">Nothing planned for this day.<br>Tap Add to put something here.</div>';
+      else {
+        if (untimed.length) html += '<h2 class="group">Any time</h2>' + untimed.map(e => cardHtml(e, false)).join("");
+        if (timed.length) html += '<h2 class="group">Timed</h2>' + timed.map(e => cardHtml(e, false)).join("");
+      }
+      $("#todayView").innerHTML = html;
+    } else {
+      $("#weekView").innerHTML = Array.from({ length: 7 }, (_, i) => {
+        const dt = addDays(ws, i);
+        const list = entriesOn(dt).filter(visible);
+        const items = untimedOf(list).concat(timedOf(list));
+        return '<section class="daysec' + (dt === today ? " is-today" : "") + '" aria-label="' + longDate(dt) + '">' +
+          '<div class="daysec-head"><button class="daylink" data-goday="' + dt + '" aria-label="' + longDate(dt) + '">' + shortDate(dt) +
+          (dt === today ? '<span class="tag">Today</span>' : "") + '</button>' +
+          '</div>' +
+          items.map(e => cardHtml(e, true)).join("") + '</section>';
+      }).join("");
+    }
+  }
+
+  // The little pill at the top right, plus a banner that only appears when a save has failed.
+  let saveTimer;
+  function setSaveState(state, detail) {
+    const s = $("#saveState");
+    clearTimeout(saveTimer);
+    s.classList.toggle("err", state === "error");
+    $("#syncBanner").hidden = state !== "error";
+    document.body.classList.toggle("has-banner", state === "error");     // leaves room so the banner never covers the footer buttons
+    s.classList.add("show");
+    if (state === "saving") s.textContent = "Saving…";
+    else if (state === "saved") { s.textContent = "✓ Saved"; saveTimer = setTimeout(() => s.classList.remove("show"), 3000); }
+    else if (state === "error") {
+      s.textContent = "⚠ Not saved";
+      $("#syncDetail").textContent = detail || "It's still on this screen. Don't close the page until it saves.";
+    }
+  }
+  // Demo mode only: pretend to save so the Saving / Saved pill can be seen.
+  function fakeSave() {
+    setSaveState("saving");
+    saveTimer = setTimeout(() => setSaveState("saved"), 500);
+  }
+  // Called after every change. In the real app this sends the change to the database.
+  function changed() { if (DEMO) fakeSave(); else queueSync(); }
+
+  let toastTimer;
+  function toast(msg, actionLabel, actionFn, ms) {
+    $("#toastText").textContent = msg;
+    const a = $("#toastAction");
+    a.hidden = !actionLabel;
+    a.textContent = actionLabel || "";
+    a.onclick = actionFn ? () => { actionFn(); $("#toast").hidden = true; } : null;
+    $("#toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $("#toast").hidden = true; }, ms || 2400);
+  }
+
+  const toTop = () => window.scrollTo({ top: 0 });
+
+  // ---------- Add / edit sheet ----------
+  function whenKey(label) {
+    const hit = Object.keys(LABEL).find(k => LABEL[k] === label);
+    return hit || "any";
+  }
+
+  function openSheet(id, date) {
+    const e = id ? findEntry(id) : null;
+    const cur = e && e.seriesId ? series.find(x => x.id === e.seriesId) : null;
+    f = e
+      ? { id: e.id, seriesId: e.seriesId || null, orig: e.orig || null, type: e.type, date: e.date, owner: e.owner, when: e.start ? "time" : whenKey(e.label),
+          start: e.start || "", end: e.end || "", close: !!e.close,
+          rep: cur ? repKindOf(cur.rule) : "off", every: cur && cur.rule.kind === "weeks" && cur.rule.every > 2 ? cur.rule.every : 3,
+          monthDay: cur && cur.rule.kind === "monthdate" ? cur.rule.day : parts(e.date).d, monthDayTouched: !!(cur && cur.rule.kind === "monthdate"),
+          months: cur && cur.rule.kind !== "weeks" ? (cur.rule.every || 1) : 1,
+          nth: cur && cur.rule.kind === "monthly" ? cur.rule.nth : Math.min(nthOf(e.date), 5), wd: cur && cur.rule.kind === "monthly" ? cur.rule.dow : dow(e.date),
+          wdTouched: !!(cur && cur.rule.kind === "monthly") }
+      : { id: null, seriesId: null, orig: null, type: "task", date: date || selectedDate, owner: who === "all" ? null : who, when: "any", start: "", end: "", close: false,
+          rep: "off", every: 3, monthDay: parts(date || selectedDate).d, monthDayTouched: false, months: 1,
+          nth: Math.min(nthOf(date || selectedDate), 5), wd: dow(date || selectedDate), wdTouched: false };
+    f.repOpen = false;
+    f.rep0 = f.rep; f.every0 = f.every; f.monthDay0 = f.monthDay; f.months0 = f.months; f.nth0 = f.nth; f.wd0 = f.wd;
+    pending = null;
+    $("#fEvery").value = f.every;
+    $("#fMonthDay").value = f.monthDay;
+    $("#fMonths").value = f.months;
+    $("#fName").value = e ? e.name : "";
+    $("#fStart").value = f.start;
+    $("#fEnd").value = f.end;
+    $("#formError").textContent = "";
+    $("#sheetTitle").textContent = e ? "Edit entry" : "Add";
+    $("#btnDelete").hidden = !e;
+    renderForm();
+    $("#sheet").showModal();
+    if (!e) $("#fName").focus();
+  }
+
+  function renderForm() {
+    $("#scopeBox").hidden = true; pending = null;
+    document.querySelectorAll("#fType button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.type === f.type)));
+    document.querySelectorAll("#fOwner button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.owner === f.owner)));
+    const ws = weekStart(f.date);
+    $("#fDays").innerHTML = Array.from({ length: 7 }, (_, i) => {
+      const dt = addDays(ws, i);
+      return '<button type="button" data-fday="' + dt + '" aria-pressed="' + (dt === f.date) + '" aria-label="' + longDate(dt) + '">' +
+        '<span class="dow">' + DAYS[i] + '</span><span class="num">' + parts(dt).d + '</span>' + monTag(dt) + '</button>';
+    }).join("");
+    $("#fWhen").innerHTML = WHEN.map(([k, text]) =>
+      '<button type="button" data-when="' + k + '" aria-pressed="' + (k === f.when) + '">' + text + '</button>').join("");
+    $("#timeBlock").hidden = f.when !== "time";
+    $("#btnUntil").hidden = f.when !== "time";
+    $("#btnUntil").setAttribute("aria-pressed", String(f.close));
+    $("#fEnd").disabled = f.close;
+    $("#dayNote").textContent = longDate(f.date);
+    if (!f.monthDayTouched) f.monthDay = parts(f.date).d;      // follows the chosen day until you type your own
+    const md = Number.isInteger(f.monthDay) && f.monthDay >= 1 && f.monthDay <= 31 ? f.monthDay : null;
+    const mOk = Number.isInteger(f.months) && f.months >= 1 && f.months <= 12;
+    const lead = !mOk || f.months === 1 ? "Monthly" : "Every " + f.months + " months";
+    const monthEvery = !mOk || f.months === 1 ? "every month" : "every " + f.months + " months";
+    if (!f.wdTouched) { f.nth = Math.min(nthOf(f.date), 5); f.wd = dow(f.date); }      // follows the chosen day until you pick your own
+    const nthWd = ORD[f.nth] + " " + FULL[f.wd];
+    const REP = [["off", "Doesn't repeat"], ["weekly", "Every week"], ["fortnight", "Every 2 weeks"], ["custom", "Every … weeks"],
+      ["monthly", "Monthly on a day"], ["monthdate", "Monthly on a date"]];
+    const SUMMARY = { monthly: lead + " on the " + nthWd, monthdate: lead + " on the " + (md ? ordinal(md) : "…") };
+    $("#fRep").innerHTML = REP.map(([k, text]) =>
+      '<button type="button" data-rep="' + k + '" aria-pressed="' + (k === f.rep) + '">' + text + '</button>').join("");
+    $("#repPanel").hidden = !f.repOpen;
+    $("#repToggle").setAttribute("aria-expanded", String(f.repOpen));
+    $("#repSummary").textContent = f.rep === "custom" ? "Every " + (f.every || "…") + " weeks" : SUMMARY[f.rep] || REP.find(r => r[0] === f.rep)[1];
+    $("#weekdayBlock").hidden = f.rep !== "monthly";
+    if (document.activeElement !== $("#fNth")) $("#fNth").value = String(f.nth);
+    if (document.activeElement !== $("#fWd")) $("#fWd").value = String(f.wd);
+    $("#everyBlock").hidden = f.rep !== "custom";
+    $("#monthDayBlock").hidden = f.rep !== "monthdate";
+    $("#monthDaySuffix").textContent = (md ? ordinal(md).replace(/^\d+/, "") : "th") + " day of the month";
+    $("#monthsBlock").hidden = f.rep !== "monthly" && f.rep !== "monthdate";
+    $("#monthsWord").textContent = f.months === 1 ? "month" : "months";
+    if (document.activeElement !== $("#fMonths")) $("#fMonths").value = f.months;
+    if (document.activeElement !== $("#fMonthDay")) $("#fMonthDay").value = f.monthDay;
+    const day = FULL[dow(f.date)];
+    $("#repNote").textContent = {
+      off: "",
+      weekly: "Appears on every " + day + " from this one forwards. Earlier weeks are not changed.",
+      fortnight: "Appears on every other " + day + " from this one forwards. Earlier weeks are not changed.",
+      custom: "Appears on a " + day + " every " + (f.every || "…") + " weeks from this one forwards. Earlier weeks are not changed.",
+      monthly: "Appears on the " + nthWd + " " + monthEvery + ", from this one forwards. Earlier weeks are not changed." +
+        (firstOnOrAfter({ kind: "monthly", nth: f.nth, dow: f.wd }, f.date) !== f.date ? " The first entry will be on " + datePlain(firstOnOrAfter({ kind: "monthly", nth: f.nth, dow: f.wd }, f.date)) + "." : ""),
+      monthdate: !md ? "Type a day of the month from 1 to 31."
+        : "Appears on the " + ordinal(md) + " " + monthEvery + (md > 28 ? " (the last day in shorter months)" : "") + ", from this one forwards. Earlier weeks are not changed." +
+          (firstOnOrAfter({ kind: "monthdate", day: md }, f.date) !== f.date ? " The first entry will be on " + datePlain(firstOnOrAfter({ kind: "monthdate", day: md }, f.date)) + "." : "")
+    }[f.rep];
+    const overnight = f.when === "time" && f.start && f.end && !f.close && f.end < f.start;
+    $("#endNote").textContent = f.when === "time" && overnight
+      ? "This entry only shows on the day it starts, but it finishes the following day." : "";
+  }
+
+  function formError(msg, el) {
+    if (el && el.closest("#repPanel") && !f.repOpen) { f.repOpen = true; renderForm(); }
+    $("#formError").textContent = "⚠ " + msg;
+    if (el) el.focus();
+  }
+
+  function saveForm() {
+    const name = $("#fName").value.trim();
+    if (!name) return formError("Add a name for this entry.", $("#fName"));
+    if (!f.owner) return formError("Choose who this " + f.type + " is for.");
+    if (f.when === "time") {
+      if (!f.start) return formError("Set a start time, or pick Any time.", $("#fStart"));
+      if (f.end && !f.close) {
+        if (f.end === f.start) return formError("Start and finish are the same time. Check the times.", $("#fEnd"));
+        const mins = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+        let len = mins(f.end) - mins(f.start);
+        if (len < 0) len += 24 * 60;          // finishing earlier than the start means after midnight
+        if (len > 16 * 60) return formError("That would run for " + Math.floor(len / 60) + "h " + (len % 60) + "m. Check the finish time.", $("#fEnd"));
+      }
+    }
+    if (f.rep === "custom") {
+      if (!Number.isInteger(f.every) || f.every < 2 || f.every > 26) return formError("Choose how many weeks apart: a number from 2 to 26.", $("#fEvery"));
+    }
+    if (f.rep === "monthdate" && !(Number.isInteger(f.monthDay) && f.monthDay >= 1 && f.monthDay <= 31))
+      return formError("Choose a day of the month from 1 to 31.", $("#fMonthDay"));
+    if ((f.rep === "monthly" || f.rep === "monthdate") && !(Number.isInteger(f.months) && f.months >= 1 && f.months <= 12))
+      return formError("Choose how many months apart: a number from 1 to 12.", $("#fMonths"));
+    const data = { name, type: f.type, date: f.date, owner: f.owner };
+    if (f.when === "time") { data.start = f.start; if (f.close) data.close = true; else if (f.end) data.end = f.end; }
+    else data.label = LABEL[f.when];
+
+    // A repeating entry that already exists: ask which weeks the change should reach.
+    if (f.seriesId) {
+      const repChanged = f.rep !== f.rep0 || (f.rep === "custom" && f.every !== f.every0) || (f.rep === "monthdate" && f.monthDay !== f.monthDay0)
+        || ((f.rep === "monthly" || f.rep === "monthdate") && f.months !== f.months0)
+        || (f.rep === "monthly" && (f.nth !== f.nth0 || f.wd !== f.wd0));
+      pending = { kind: "save", data, repChanged };
+      $("#scopeTitle").textContent = repChanged
+        ? "You've changed how this repeats, so the change applies from this week forwards. Earlier weeks stay as they are."
+        : "This entry repeats. Apply your changes to:";
+      $("#scopeOne").hidden = repChanged;
+      $("#scopeFuture").textContent = repChanged ? "Apply from this week forwards" : "This and all later weeks";
+      $("#formError").textContent = "";
+      $("#scopeBox").hidden = false;
+      $("#scopeBox").scrollIntoView({ block: "nearest" });
+      return;
+    }
+    commitSave(data, "new");
+  }
+
+  // End a series just before one occurrence; the earlier weeks stay exactly as they were.
+  function endSeriesBefore(sid, orig) {
+    const s = series.find(x => x.id === sid);
+    exceptions = exceptions.filter(x => !(x.sid === sid && x.orig >= orig));
+    if (orig <= s.from) { series = series.filter(x => x.id !== sid); exceptions = exceptions.filter(x => x.sid !== sid); }
+    else s.last = addDays(orig, -1);
+  }
+  function newSeries(data, rule, from) {
+    const s = { id: uuid(), from, last: null, rule };
+    FIELDS.forEach(k => { if (data[k] !== undefined) s[k] = data[k]; });
+    series.push(s);
+    return s;
+  }
+
+  function commitSave(data, scope) {
+    // If the entry was deleted on the other phone while this sheet was open, add it again rather than lose the edit.
+    let revived = false;
+    if (f.id && !findEntry(f.id)) { f.id = null; f.seriesId = null; f.orig = null; revived = true; }
+    const wasEdit = !!f.id;
+    const rule = ruleFromForm();
+    // A "monthly on the 28th" entry starts on the first 28th, which may not be the day picked.
+    const start = rule && (rule.kind === "monthdate" || rule.kind === "monthly") ? firstOnOrAfter(rule, f.date) : f.date;
+    if (rule && start !== f.date) data.date = start;
+    let doneNow = false;
+    if (f.seriesId) {
+      const cur = findEntry(f.id);
+      doneNow = cur && cur.type === "task" && cur.done;
+      if (scope === "one") {
+        const ex = ensureEx(f.seriesId, f.orig);
+        ex.skip = false; ex.data = data;
+        if (data.type !== "task") delete ex.done;
+      } else {
+        endSeriesBefore(f.seriesId, f.orig);
+        if (rule) {
+          const s = newSeries(data, rule, start);
+          if (data.type === "task" && doneNow) ensureEx(s.id, start).done = true;
+        } else {
+          const one = Object.assign({ id: uuid() }, data);
+          if (data.type === "task") one.done = doneNow;
+          entries.push(one);
+        }
+      }
+    } else if (wasEdit) {
+      const old = entries.find(x => String(x.id) === String(f.id));
+      doneNow = old.type === "task" && old.done;
+      if (rule) {
+        entries = entries.filter(x => x !== old);
+        const s = newSeries(data, rule, start);
+        if (data.type === "task" && doneNow) ensureEx(s.id, start).done = true;
+      } else {
+        delete old.start; delete old.end; delete old.label; delete old.close;
+        Object.assign(old, data);
+        if (data.type === "task") old.done = doneNow; else delete old.done;
+      }
+    } else if (rule) {
+      newSeries(data, rule, start);
+    } else {
+      const one = Object.assign({ id: uuid() }, data);
+      if (data.type === "task") one.done = false;
+      entries.push(one);
+    }
+
+    $("#sheet").close();
+    selectedDate = data.date;
+    if (who !== "all" && data.owner !== who && data.owner !== "both") who = "all";   // so the new entry is visible
+    changed();
+    render();
+    toast(revived ? "That entry was deleted on the other phone, so it has been added again on " + shortDate(data.date)
+      : (wasEdit ? "Updated " : "Added to ") + shortDate(data.date), null, null, revived ? 5000 : 0);
+    const shown = entriesOn(data.date).find(x => x.name === data.name && x.owner === data.owner);
+    const card = shown && document.querySelector('.card[data-id="' + shown.id + '"]');
+    if (card) {
+      card.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      card.classList.add("flash");
+      setTimeout(() => card.classList.remove("flash"), 1800);
+    }
+  }
+
+  function deleteEntry(scope) {
+    const e = findEntry(f.id);
+    if (!e) { $("#sheet").close(); render(); return; }          // already gone (deleted on the other phone)
+    const sid = f.seriesId;
+    // Remember only what this delete touches, so Undo can never overwrite changes made on the other phone meanwhile.
+    const before = sid
+      ? { series: clone(series.find(x => x.id === sid) || null), exs: exceptions.filter(x => x.sid === sid).map(clone) }
+      : { entry: clone(entries.find(x => String(x.id) === String(f.id))) };
+    if (sid) {
+      if (scope === "one") ensureEx(sid, f.orig).skip = true;
+      else endSeriesBefore(sid, f.orig);
+    } else {
+      entries = entries.filter(x => String(x.id) !== String(f.id));
+    }
+    $("#sheet").close();
+    changed();
+    render();
+    const short = e.name.length > 28 ? e.name.slice(0, 28) + "…" : e.name;
+    toast("Deleted “" + short + "”" + (scope === "future" ? " and later weeks" : ""), "Undo", () => {
+      if (sid) {
+        if (before.series) {
+          series = series.filter(x => x.id !== sid).concat([clone(before.series)]);
+          exceptions = exceptions.filter(x => x.sid !== sid).concat(before.exs.map(clone));
+        }
+      } else if (!entries.some(x => String(x.id) === String(before.entry.id))) entries.push(clone(before.entry));
+      selectedDate = e.date;
+      changed(); render();
+    }, 8000);
+  }
+
+  // ---------- Clicks ----------
+  document.addEventListener("click", (ev) => {
+    const t = ev.target.closest("button");
+    if (!t) return;
+    const d = t.dataset;
+    if (d.day !== undefined) { selectedDate = d.day; render(); }
+    else if (d.who) { who = d.who; render(); }
+    else if (d.view) { view = d.view; if (view === "today") selectedDate = todayISO(); render(); toTop(); }
+    else if (d.nav) { selectedDate = addDays(selectedDate, 7 * Number(d.nav)); render(); }
+    else if (d.jump !== undefined) { selectedDate = todayISO(); render(); }
+    else if (d.goday) { selectedDate = d.goday; view = "today"; render(); toTop(); }
+    else if (d.toggle) {
+      // A joint task is one entry, so it is done for both people.
+      const e = findEntry(d.toggle);
+      if (!e) { render(); return; }                  // deleted on the other phone
+      if (e.seriesId) { const ex = ensureEx(e.seriesId, e.orig); ex.done = !e.done; }
+      else e.done = !e.done;
+      changed(); render();
+    }
+    else if (d.save !== undefined) saveForm();
+    else if (d.open) openSheet(null);
+    else if (d.edit) openSheet(d.edit);
+    else if (d.close !== undefined) $("#sheet").close();
+    else if (d.type) { f.type = d.type; if (f.type === "shift" && f.when === "any") f.when = "time"; renderForm(); }
+    else if (d.owner) { f.owner = d.owner; renderForm(); }
+    else if (d.fday) { f.date = d.fday; renderForm(); }
+    else if (d.when) { f.when = d.when; renderForm(); }
+    else if (d.until) { f.close = !f.close; if (f.close) { f.end = ""; $("#fEnd").value = ""; } renderForm(); }
+    else if (t.id === "btnDelete") {
+      if (f.seriesId) {
+        pending = { kind: "delete" };
+        $("#scopeTitle").textContent = "This entry repeats. Delete:";
+        $("#scopeOne").hidden = false; $("#scopeOne").textContent = "This week only";
+        $("#scopeFuture").hidden = false; $("#scopeFuture").textContent = "This and all later weeks";
+        $("#formError").textContent = "";
+        $("#scopeBox").hidden = false;
+        $("#scopeBox").scrollIntoView({ block: "nearest" });
+      } else {
+        const cur = findEntry(f.id);
+        const nm = cur ? (cur.name.length > 60 ? cur.name.slice(0, 60) + "…" : cur.name) : "this entry";
+        askDialog("Delete this entry?", "“" + nm + "” will be deleted for both of you.", [
+          { label: "Cancel" },
+          { label: "Delete", primary: true, fn: () => deleteEntry("one") }
+        ]);
+      }
+    }
+    else if (d.scope) {
+      if (d.scope === "back") { $("#scopeBox").hidden = true; pending = null; }
+      else if (pending && pending.kind === "save") commitSave(pending.data, d.scope);
+      else if (pending && pending.kind === "delete") deleteEntry(d.scope);
+    }
+    else if (d.rep) { f.rep = d.rep; renderForm(); }
+    else if (d.reptoggle !== undefined) { f.repOpen = !f.repOpen; renderForm(); if (f.repOpen) $("#repPanel").scrollIntoView({ block: "nearest" }); }
+    if (f && $("#sheet").open && !t.id && d.save === undefined) $("#formError").textContent = "";   // Save sets its own message
+  });
+
+  // Save is a normal button, not a form submit: some preview panels block form submission entirely.
+  $("#entryForm").addEventListener("submit", (ev) => ev.preventDefault());
+  $("#fStart").addEventListener("input", (ev) => { f.start = ev.target.value; $("#formError").textContent = ""; renderForm(); });
+  $("#fEnd").addEventListener("input", (ev) => { f.end = ev.target.value; $("#formError").textContent = ""; renderForm(); });
+  $("#fName").addEventListener("input", () => { $("#formError").textContent = ""; $("#scopeBox").hidden = true; pending = null; });
+  $("#fMonthDay").addEventListener("input", (ev) => { f.monthDay = ev.target.value === "" ? NaN : Number(ev.target.value); f.monthDayTouched = true; $("#formError").textContent = ""; renderForm(); });
+  $("#fNth").addEventListener("change", (ev) => { f.nth = Number(ev.target.value); f.wdTouched = true; renderForm(); });
+  $("#fWd").addEventListener("change", (ev) => { f.wd = Number(ev.target.value); f.wdTouched = true; renderForm(); });
+  $("#fMonths").addEventListener("input", (ev) => { f.months = ev.target.value === "" ? NaN : Number(ev.target.value); $("#formError").textContent = ""; renderForm(); });
+  $("#fEvery").addEventListener("input", (ev) => { f.every = Number(ev.target.value); $("#formError").textContent = ""; renderForm(); $("#fEvery").focus(); });
+  // Return on the name field closes the keyboard instead of saving half a form.
+  $("#fName").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); } });
+
+  // ======================================================================================================
+  // Real saving and sign-in (skipped in ?demo mode)
+  // ======================================================================================================
+  const TABLES = ["entries", "series", "exceptions"];
+  let sb = null;                           // the Supabase client
+  let me = null;                           // the signed-in user
+  const rem = { entries: new Map(), series: new Map(), exceptions: new Map() };   // what the database holds, as last seen
+
+  // ---- Local entry <-> database row. If a column is ever renamed in the database, this is the only place to change. ----
+  const nz = (v) => (v === undefined || v === null || v === "" ? null : v);
+  const hhmm = (t) => (t ? String(t).slice(0, 5) : undefined);
+  const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === "object" && !Array.isArray(x)
+    ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
+  const exKey = (r) => r.series_id + "|" + r.orig;
+
+  const entryRow = (e) => ({ id: e.id, date: e.date, name: e.name, owner: e.owner, type: e.type, start_time: nz(e.start), end_time: nz(e.end),
+    label: nz(e.label), close: !!e.close, done: e.type === "task" ? !!e.done : false });
+  function entryFrom(r) {
+    const e = { id: r.id, date: r.date, name: r.name, owner: r.owner, type: r.type };
+    if (r.start_time) e.start = hhmm(r.start_time);
+    if (r.end_time) e.end = hhmm(r.end_time);
+    if (r.label) e.label = r.label;
+    if (r.close) e.close = true;
+    if (r.type === "task") e.done = !!r.done;
+    return e;
+  }
+  const seriesRow = (s) => ({ id: s.id, name: s.name, owner: s.owner, type: s.type, start_time: nz(s.start), end_time: nz(s.end),
+    label: nz(s.label), close: !!s.close, from_date: s.from, last_date: nz(s.last), rule: s.rule });
+  function seriesFrom(r) {
+    const s = { id: r.id, name: r.name, owner: r.owner, type: r.type, from: r.from_date, last: r.last_date || null, rule: r.rule };
+    if (r.start_time) s.start = hhmm(r.start_time);
+    if (r.end_time) s.end = hhmm(r.end_time);
+    if (r.label) s.label = r.label;
+    if (r.close) s.close = true;
+    return s;
+  }
+  const exRow = (x) => ({ series_id: x.sid, orig: x.orig, skip: !!x.skip, done: !!x.done, data: x.data || null });
+  function exFrom(r) {
+    const x = { sid: r.series_id, orig: r.orig };
+    if (r.skip) x.skip = true;
+    if (r.done) x.done = true;
+    if (r.data) x.data = r.data;
+    return x;
+  }
+
+  function ck(res) {                       // turn a Supabase { error } reply into a thrown error
+    if (res.error) { res.error.status = res.status; throw res.error; }
+    return res.data;
+  }
+  const chunks = (arr, n) => { const out = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; };
+
+  // ---- Working out what needs sending: compare what we have with what the database was last seen to hold ----
+  function wanted() {
+    const w = { entries: new Map(), series: new Map(), exceptions: new Map() };
+    entries.forEach(e => w.entries.set(e.id, entryRow(e)));
+    series.forEach(s => w.series.set(s.id, seriesRow(s)));
+    exceptions.forEach(x => {
+      if (!w.series.has(x.sid) || (!x.skip && !x.done && !x.data)) return;      // nothing to store
+      const r = exRow(x); w.exceptions.set(exKey(r), r);
+    });
+    return w;
+  }
+  function plan() {
+    const w = wanted(), up = { entries: [], series: [], exceptions: [] }, del = { entries: [], series: [], exceptions: [] };
+    TABLES.forEach(t => {
+      w[t].forEach((row, k) => { if (rem[t].get(k) !== canon(row)) up[t].push(row); });
+      rem[t].forEach((_, k) => { if (!w[t].has(k)) del[t].push(k); });
+    });
+    return { up, del };
+  }
+  function planHasWork() {
+    const p = plan();
+    return TABLES.some(t => p.up[t].length || p.del[t].length);
+  }
+
+  async function doSync() {
+    const p = plan();
+    for (const t of ["entries", "series"]) {
+      for (const part of chunks(p.up[t], 200)) {
+        ck(await sb.from(t).upsert(part, { onConflict: "id" }));
+        part.forEach(r => rem[t].set(r.id, canon(r)));
+      }
+    }
+    for (const part of chunks(p.up.exceptions, 200)) {
+      ck(await sb.from("exceptions").upsert(part, { onConflict: "series_id,orig" }));
+      part.forEach(r => rem.exceptions.set(exKey(r), canon(r)));
+    }
+    for (const part of chunks(p.del.exceptions, 10)) {
+      await Promise.all(part.map(async (k) => {
+        const [sid, orig] = k.split("|");
+        ck(await sb.from("exceptions").delete().eq("series_id", sid).eq("orig", orig));
+        rem.exceptions.delete(k);
+      }));
+    }
+    for (const t of ["entries", "series"]) {
+      for (const part of chunks(p.del[t], 100)) {
+        ck(await sb.from(t).delete().in("id", part));
+        part.forEach(k => rem[t].delete(k));
+      }
+    }
+  }
+
+  let syncing = false, syncAgain = false, syncFailed = null, wantRefresh = false;
+  const isAuthError = (err) => !!err && (err.status === 401 || err.code === "PGRST301" || /jwt/i.test(err.message || ""));
+  function describeError(err) {
+    if (!navigator.onLine) return "You look to be offline. It will save when you're back online.";
+    const m = err && (err.message || err.details);
+    return "Couldn't reach the saving service" + (m ? " (" + m + ")" : "") + ". Your change is still on this screen.";
+  }
+
+  function queueSync() {
+    if (!me) return;
+    setSaveState("saving");
+    syncAgain = true;
+    if (!syncing) runSync();
+  }
+  async function runSync() {
+    syncing = true;
+    let refreshedLogin = false;
+    try {
+      while (syncAgain) {
+        syncAgain = false;
+        try { await doSync(); }
+        catch (err) {
+          if (isAuthError(err) && !refreshedLogin) {
+            refreshedLogin = true;
+            const r = await sb.auth.refreshSession();
+            if (!r.error && r.data && r.data.session) { syncAgain = true; continue; }
+          }
+          throw err;
+        }
+      }
+      syncFailed = null;
+      setSaveState("saved");
+    } catch (err) {
+      syncFailed = err;
+      syncAgain = false;
+      setSaveState("error", isAuthError(err) ? "Your sign-in has run out. Sign out and back in, then your change will save." : describeError(err));
+    } finally {
+      syncing = false;
+    }
+    if (!syncFailed && wantRefresh) { wantRefresh = false; refresh(); }
+  }
+
+  // ---- Getting everyone's changes ----
+  async function fetchTable(t) {
+    const out = [], PAGE = 1000;                  // the database hands back at most 1000 rows at a time
+    for (let from = 0; ; from += PAGE) {
+      let q = sb.from(t).select("*");
+      q = t === "exceptions" ? q.order("series_id").order("orig") : q.order("id");
+      const rows = ck(await q.range(from, from + PAGE - 1));
+      out.push(...rows);
+      if (rows.length < PAGE) break;
+    }
+    return out;
+  }
+  const fetchAll = async () => { const [a, b, c] = await Promise.all(TABLES.map(fetchTable)); return { entries: a, series: b, exceptions: c }; };
+  const dataSig = () => canon([entries.slice().sort((a, b) => (a.id < b.id ? -1 : 1)), series.slice().sort((a, b) => (a.id < b.id ? -1 : 1)),
+    exceptions.slice().sort((a, b) => ((a.sid + a.orig) < (b.sid + b.orig) ? -1 : 1))]);
+
+  function applyRows(rows) {                     // returns true if anything actually changed
+    const before = dataSig();
+    entries = rows.entries.map(entryFrom);
+    series = rows.series.map(seriesFrom);
+    exceptions = rows.exceptions.map(exFrom);
+    TABLES.forEach(t => rem[t].clear());
+    entries.forEach(e => { const r = entryRow(e); rem.entries.set(r.id, canon(r)); });
+    series.forEach(s => { const r = seriesRow(s); rem.series.set(r.id, canon(r)); });
+    exceptions.forEach(x => { const r = exRow(x); rem.exceptions.set(exKey(r), canon(r)); });
+    return before !== dataSig();
+  }
+
+  let fetching = false;
+  async function refresh() {
+    if (DEMO || !me || fetching) return;
+    if (syncing || syncFailed || planHasWork()) { wantRefresh = true; return; }   // never overwrite changes that haven't saved yet
+    fetching = true;
+    try {
+      const rows = await fetchAll();
+      if (syncing || syncFailed || planHasWork()) { wantRefresh = true; return; }   // you changed something while we were fetching
+      if (applyRows(rows)) render();
+    } catch (err) {
+      if (isAuthError(err)) { const r = await sb.auth.refreshSession(); if (r.error) setTimeout(() => onSignedOut(), 0); }
+      // Otherwise stay quiet: the next check will try again.
+    } finally { fetching = false; }
+  }
+
+  // ---- Keeping both phones up to date ----
+  let chan = null, pollTimer = null, refreshTimer = null, liveOn = false;
+  const scheduleRefresh = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(refresh, 250); };
+  function liveNote() {
+    $("#footLive").textContent = liveOn ? "Changes from the other phone appear straight away."
+      : "Checking for changes from the other phone every 30 seconds.";
+  }
+  function tick() {
+    if (!me || document.visibilityState !== "visible") return;
+    if (syncFailed) queueSync(); else refresh();
+  }
+  function startLive() {
+    stopLive();
+    chan = sb.channel("our-week");
+    TABLES.forEach(t => chan.on("postgres_changes", { event: "*", schema: "public", table: t }, scheduleRefresh));
+    chan.subscribe((status) => { liveOn = status === "SUBSCRIBED"; liveNote(); });
+    pollTimer = setInterval(tick, 30000);
+    liveNote();
+  }
+  function stopLive() {
+    if (chan && sb) sb.removeChannel(chan);
+    chan = null; liveOn = false;
+    clearInterval(pollTimer); clearTimeout(refreshTimer);
+  }
+  document.addEventListener("visibilitychange", tick);
+  window.addEventListener("focus", tick);
+  window.addEventListener("online", tick);
+  window.addEventListener("pageshow", tick);
+  window.addEventListener("beforeunload", (ev) => {
+    if (!DEMO && me && (syncing || syncFailed || planHasWork())) { ev.preventDefault(); ev.returnValue = ""; }
+  });
+  $("#syncRetry").addEventListener("click", () => queueSync());
+
+  // ---- Sign-in screens ----
+  const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const linkType = hashParams.get("type");                   // "invite" or "recovery" when you arrive from an email link
+  const linkError = hashParams.get("error_description") || (hashParams.get("error") ? "That link didn't work." : "");
+
+  const PANELS = ["gLoading", "gSignin", "gSetpw", "gDenied", "gError"];
+  function showGate(name) {
+    hidePasswords();
+    $("#appMain").hidden = true; $("#bar").hidden = true; $("#syncBanner").hidden = true;
+    $("#gate").hidden = false;
+    PANELS.forEach(p => { $("#" + p).hidden = p !== name; });
+  }
+  function showApp() { $("#gate").hidden = true; $("#appMain").hidden = false; $("#bar").hidden = false; }
+  function gateError(title, text, retry) {
+    $("#geTitle").textContent = title; $("#geText").textContent = text;
+    $("#geRetry").onclick = retry;
+    showGate("gError");
+  }
+  function showSignIn(info) {
+    $("#siInfo").textContent = info || "";
+    $("#siMsg").textContent = "";
+    showGate("gSignin");
+  }
+  function showSetPassword(title) {
+    $("#spTitle").textContent = title;
+    $("#spPass").value = ""; $("#spPass2").value = ""; $("#spMsg").textContent = "";
+    showGate("gSetpw");
+  }
+  const setBusy = (btn, busy, idle, working) => { btn.disabled = busy; btn.textContent = busy ? working : idle; };
+
+  async function startApp(renewed) {
+    showGate("gLoading");
+    $("#gLoadingText").textContent = "Loading your week…";
+    try {
+      const member = ck(await sb.rpc("is_member"));
+      if (member !== true) { showGate("gDenied"); return; }
+      if (!planHasWork()) applyRows(await fetchAll());          // unsaved changes kept from before a sign-in ran out are not overwritten
+    } catch (err) {
+      if (isAuthError(err)) {                       // the saved sign-in is no longer accepted: renew it once, otherwise ask for a fresh sign-in
+        const r = renewed ? { error: true } : await sb.auth.refreshSession();
+        if (!r.error && r.data && r.data.session) { me = r.data.session.user; return startApp(true); }
+        await sb.auth.signOut({ scope: "local" });
+        me = null;
+        showSignIn("Your sign-in has run out. Please sign in again.");
+        return;
+      }
+      gateError("Couldn't load your week", describeError(err), () => startApp());
+      return;
+    }
+    $("#footWho").textContent = "Signed in as " + me.email;
+    $("#foot").hidden = false;
+    showApp();
+    render();
+    startLive();
+    if (planHasWork()) queueSync();
+  }
+
+  async function doSignIn() {
+    const email = $("#siEmail").value.trim(), pass = $("#siPass").value;
+    if (!email || !pass) { $("#siMsg").textContent = "⚠ Enter your email and password."; return; }
+    setBusy($("#siGo"), true, "Sign in", "Signing in…");
+    $("#siMsg").textContent = "";
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    setBusy($("#siGo"), false, "Sign in", "Signing in…");
+    if (error) {
+      $("#siPass").value = "";
+      $("#siMsg").textContent = "⚠ " + (error.status === 429 ? "Too many tries. Wait a minute, then try again."
+        : error.status === 400 || error.status === 401 ? "That email or password isn't right."
+        : "Couldn't reach the sign-in service. Check your connection and try again.");
+      return;
+    }
+    me = data.user;
+    $("#siPass").value = "";
+    startApp();
+  }
+
+  // Show / hide what you are typing. Every password box starts hidden, and goes back to hidden when the screen changes.
+  function hidePasswords() {
+    document.querySelectorAll("[data-showpw]").forEach(b => {
+      b.dataset.showpw.split(",").forEach(id => { $("#" + id).type = "password"; });
+      b.textContent = b.dataset.showpw.includes(",") ? "Show passwords" : "Show password";
+    });
+  }
+  document.querySelectorAll("[data-showpw]").forEach(b => b.addEventListener("click", () => {
+    const ids = b.dataset.showpw.split(","), showing = $("#" + ids[0]).type === "text";
+    ids.forEach(id => { $("#" + id).type = showing ? "password" : "text"; });
+    b.textContent = (showing ? "Show" : "Hide") + (ids.length > 1 ? " passwords" : " password");
+  }));
+
+  // The same checks and the same plain wording wherever a new password is chosen.
+  function passwordProblem(a, b) {
+    if (a.length < 10) return "Use at least 10 characters.";
+    if (a !== b) return "The two passwords don't match.";
+    return "";
+  }
+  function passwordSaveError(error) {
+    return /weak|easy|guess|pwned|known/i.test(error.message) ? "That password is too easy to guess. Try a longer one."
+      : /same/i.test(error.message) ? "Choose a password you haven't used here before."
+      : /reauth|nonce/i.test(error.message) ? "For safety, sign out and back in first, then try again."
+      : "Couldn't save that password. " + error.message;
+  }
+
+  async function doSetPassword() {
+    const a = $("#spPass").value, b = $("#spPass2").value, problem = passwordProblem(a, b);
+    if (problem) { $("#spMsg").textContent = "⚠ " + problem; return; }
+    setBusy($("#spGo"), true, "Save password", "Saving…");
+    const { data, error } = await sb.auth.updateUser({ password: a });
+    setBusy($("#spGo"), false, "Save password", "Saving…");
+    if (error) { $("#spMsg").textContent = "⚠ " + passwordSaveError(error); return; }
+    me = data.user;
+    $("#spPass").value = ""; $("#spPass2").value = "";
+    startApp();
+  }
+
+  // Changing your own password once signed in. No email is involved.
+  function openPasswordDialog() {
+    $("#cpPass").value = ""; $("#cpPass2").value = ""; $("#cpMsg").textContent = "";
+    hidePasswords();
+    $("#pwDlg").showModal();
+    $("#cpPass").focus();
+  }
+  async function doChangePassword() {
+    const a = $("#cpPass").value, b = $("#cpPass2").value, problem = passwordProblem(a, b);
+    if (problem) { $("#cpMsg").textContent = "⚠ " + problem; return; }
+    setBusy($("#cpGo"), true, "Save new password", "Saving…");
+    const { error } = await sb.auth.updateUser({ password: a });
+    setBusy($("#cpGo"), false, "Save new password", "Saving…");
+    if (error) { $("#cpMsg").textContent = "⚠ " + passwordSaveError(error); return; }
+    $("#pwDlg").close();
+    toast("Password changed. Use the new one next time you sign in.", null, null, 4500);
+  }
+  $("#pwDlg").addEventListener("close", () => { $("#cpPass").value = ""; $("#cpPass2").value = ""; $("#cpMsg").textContent = ""; hidePasswords(); });
+  $("#btnPassword").addEventListener("click", openPasswordDialog);
+  $("#cpGo").addEventListener("click", doChangePassword);
+  $("#cpCancel").addEventListener("click", () => $("#pwDlg").close());
+  $("#cpPass2").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); doChangePassword(); } });
+
+  let signOutIntent = null;
+  function onSignedOut() {
+    const byChoice = signOutIntent === "user";
+    signOutIntent = null;
+    stopLive();
+    me = null;
+    $("#todayView").innerHTML = ""; $("#weekView").innerHTML = ""; $("#foot").hidden = true;
+    if ($("#sheet").open) $("#sheet").close();
+    if (byChoice || !planHasWork()) {              // wipe what's on this device; keep it only if it hasn't saved yet
+      entries = []; series = []; exceptions = [];
+      TABLES.forEach(t => rem[t].clear());
+      syncFailed = null; syncAgain = false; wantRefresh = false;
+    }
+    $("#siPass").value = "";
+    showSignIn(byChoice ? "You're signed out." : "You've been signed out. Sign in again to carry on. Anything that hadn't saved yet is kept.");
+  }
+  async function signOutNow() {
+    signOutIntent = "user";
+    await sb.auth.signOut({ scope: "local" });       // this device only; the other phone stays signed in
+    onSignedOut();
+  }
+  function askSignOut() {
+    if (!(syncing || syncFailed || planHasWork())) {
+      askDialog("Sign out?", "You'll need your email and password to get back in.", [
+        { label: "Stay signed in", primary: true },
+        { label: "Sign out", fn: signOutNow }
+      ]);
+      return;
+    }
+    askDialog("Sign out with unsaved changes?", "Your latest change hasn't saved yet. If you sign out now, it will be lost.", [
+      { label: "Stay signed in", primary: true },
+      { label: "Sign out anyway", fn: signOutNow }
+    ]);
+  }
+
+  function askDialog(title, body, buttons) {
+    $("#dlgTitle").textContent = title; $("#dlgBody").textContent = body;
+    const box = $("#dlgBtns"); box.innerHTML = "";
+    buttons.forEach(b => {
+      const el = document.createElement("button");
+      el.type = "button"; el.className = b.primary ? "primary-btn" : "outline-btn"; el.textContent = b.label;
+      el.addEventListener("click", () => { if (!b.keep) $("#dlg").close(); if (b.fn) b.fn(); });
+      box.appendChild(el);
+    });
+    $("#dlg").showModal();
+  }
+
+  // ---- Back up and restore ----
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && toIso(parse(v)) === v;
+  const isTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+  const LABELS = Object.values(LABEL);
+
+  function downloadBackup() {
+    const body = { app: "our-week", version: 1, saved: new Date().toISOString(), entries, series, exceptions };
+    const blob = new Blob([JSON.stringify(body, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "our-week-backup-" + todayISO() + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  // Check a backup file thoroughly before it can replace anything. Returns { error } or the cleaned lists.
+  function readBackup(text) {
+    let o;
+    try { o = JSON.parse(text); } catch (e) { return { error: "That file isn't a backup from this planner." }; }
+    if (!o || o.app !== "our-week" || o.version !== 1 || !Array.isArray(o.entries) || !Array.isArray(o.series) || !Array.isArray(o.exceptions))
+      return { error: "That file isn't a backup from this planner." };
+    if (o.entries.length + o.series.length + o.exceptions.length > 20000) return { error: "That backup is far bigger than expected, so it was not used." };
+    const bad = (what, i) => ({ error: "The backup has a problem in " + what + " number " + (i + 1) + ", so nothing was changed." });
+    const base = (src, withDate) => {
+      if (!src || typeof src !== "object") return null;
+      const name = typeof src.name === "string" ? src.name.trim() : "";
+      if (!name || name.length > 120 || !["eloise", "toby", "both"].includes(src.owner) || !["task", "plan", "shift"].includes(src.type)) return null;
+      if (withDate && !isDate(src.date)) return null;
+      const out = { name, type: src.type, owner: src.owner };
+      if (withDate) out.date = src.date;
+      if (src.start !== undefined) { if (!isTime(src.start)) return null; out.start = src.start; }
+      if (src.end !== undefined) { if (!isTime(src.end)) return null; out.end = src.end; }
+      if (src.label !== undefined) { if (!LABELS.includes(src.label)) return null; out.label = src.label; }
+      if (src.close) out.close = true;
+      if (!out.start && !out.label) return null;
+      return out;
+    };
+    const seen = new Set(), newId = (id) => { const ok = typeof id === "string" && UUID_RE.test(id) && !seen.has(id.toLowerCase()); const v = ok ? id : uuid(); seen.add(v.toLowerCase()); return v; };
+    const outE = [], outS = [], outX = [], idMap = new Map();
+    for (let i = 0; i < o.entries.length; i++) {
+      const e = base(o.entries[i], true); if (!e) return bad("entry", i);
+      e.id = newId(o.entries[i].id);
+      if (e.type === "task") e.done = !!o.entries[i].done;
+      outE.push(e);
+    }
+    for (let i = 0; i < o.series.length; i++) {
+      const s0 = o.series[i], s = base(s0, false); if (!s) return bad("repeating entry", i);
+      const r = s0.rule;
+      const okRule = r && ((r.kind === "weeks" && Number.isInteger(r.every) && r.every >= 1 && r.every <= 26)
+        || (r.kind === "monthly" && Number.isInteger(r.nth) && r.nth >= 1 && r.nth <= 5 && Number.isInteger(r.dow) && r.dow >= 0 && r.dow <= 6 && Number.isInteger(r.every || 1) && (r.every || 1) >= 1 && (r.every || 1) <= 12)
+        || (r.kind === "monthdate" && Number.isInteger(r.day) && r.day >= 1 && r.day <= 31 && Number.isInteger(r.every || 1) && (r.every || 1) >= 1 && (r.every || 1) <= 12));
+      if (!okRule || !isDate(s0.from) || (s0.last && !isDate(s0.last))) return bad("repeating entry", i);
+      s.id = newId(s0.id); s.from = s0.from; s.last = s0.last || null;
+      s.rule = r.kind === "weeks" ? { kind: "weeks", every: r.every }
+        : r.kind === "monthly" ? { kind: "monthly", nth: r.nth, dow: r.dow, every: r.every || 1 } : { kind: "monthdate", day: r.day, every: r.every || 1 };
+      idMap.set(s0.id, s.id);
+      outS.push(s);
+    }
+    const exSeen = new Set();
+    for (let i = 0; i < o.exceptions.length; i++) {
+      const x0 = o.exceptions[i];
+      if (!x0 || !idMap.has(x0.sid) || !isDate(x0.orig)) return bad("change", i);
+      const x = { sid: idMap.get(x0.sid), orig: x0.orig };
+      if (exSeen.has(x.sid + "|" + x.orig)) return bad("change", i);
+      exSeen.add(x.sid + "|" + x.orig);
+      if (x0.skip) x.skip = true;
+      if (x0.done) x.done = true;
+      if (x0.data) { const d = base(x0.data, true); if (!d) return bad("change", i); x.data = d; }
+      outX.push(x);
+    }
+    return { entries: outE, series: outS, exceptions: outX, saved: typeof o.saved === "string" ? o.saved : "" };
+  }
+
+  function chooseRestoreFile() { $("#restoreFile").value = ""; $("#restoreFile").click(); }
+  $("#restoreFile").addEventListener("change", async (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast("That file is too big to be a backup.", null, null, 4000); return; }
+    const res = readBackup(await file.text());
+    if (res.error) { askDialog("Couldn't use that file", res.error, [{ label: "OK", primary: true }]); return; }
+    const when = res.saved && !isNaN(new Date(res.saved)) ? " saved on " + new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", dateStyle: "long" }).format(new Date(res.saved)) : "";
+    askDialog("Replace everything with this backup?",
+      "This backup" + when + " has " + res.entries.length + (res.entries.length === 1 ? " entry, " : " entries, ") + res.series.length + (res.series.length === 1 ? " repeating entry and " : " repeating entries and ") + res.exceptions.length + (res.exceptions.length === 1 ? " one-week change. " : " one-week changes. ") +
+      "It will replace everything now saved, for both of you.", [
+        { label: "Download what's here now first", fn: downloadBackup, keep: true },
+        { label: "Replace everything", primary: true, fn: () => {
+          entries = res.entries; series = res.series; exceptions = res.exceptions;
+          selectedDate = todayISO(); view = "today";
+          changed(); render(); toTop();
+          toast("Backup restored", null, null, 3500);
+        } },
+        { label: "Cancel" }
+      ]);
+  });
+  $("#btnBackup").addEventListener("click", downloadBackup);
+  $("#btnRestore").addEventListener("click", chooseRestoreFile);
+  $("#btnSignOut").addEventListener("click", askSignOut);
+  document.querySelectorAll("[data-gate-signout]").forEach(b => b.addEventListener("click", signOutNow));
+  $("#siGo").addEventListener("click", doSignIn);
+  $("#siEmail").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); $("#siPass").focus(); } });
+  $("#siPass").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); doSignIn(); } });
+  $("#spGo").addEventListener("click", doSetPassword);
+  $("#spPass2").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); doSetPassword(); } });
+
+  // ---------- Start ----------
+  async function boot() {
+    if (DEMO) { $("#demoNote").hidden = false; seedDemo(); showApp(); render(); return; }
+    showGate("gLoading");
+    if (!window.supabase) { gateError("Couldn't load the sign-in tools", "Check your connection and try again.", () => location.reload()); return; }
+    sb = window.supabase.createClient(CONFIG.url, CONFIG.key, {
+      auth: { flowType: "implicit", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+    sb.auth.onAuthStateChange((event) => {
+      // Do the real work a moment later: calling the library from inside this callback can deadlock it.
+      if (event === "PASSWORD_RECOVERY") setTimeout(() => showSetPassword("Choose a new password"), 0);
+      else if (event === "SIGNED_OUT" && me && signOutIntent !== "user") setTimeout(onSignedOut, 0);
+    });
+    let session = null;
+    try { session = ck(await sb.auth.getSession()).session; }
+    catch (err) { gateError("Couldn't check your sign-in", describeError(err), () => location.reload()); return; }
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);   // never leave sign-in tokens sitting in the address bar
+    if (session && (linkType === "invite" || linkType === "recovery")) showSetPassword(linkType === "invite" ? "Choose a password" : "Choose a new password");
+    else if (session) { me = session.user; startApp(); }
+    else showSignIn(linkError ? "That link has expired or was already used. Ask whoever set this up for you to help." : "");
+  }
+  boot();
+</script>
+</body>
+</html>
