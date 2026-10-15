@@ -1,0 +1,46 @@
+# Publishes the demo of Our Week to GitHub Pages.
+# It only publishes the app folder, and leaves out the Netlify-only _headers file.
+# Visit the site with ?demo=1 on the end to see the made-up entries.
+name: Publish demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Get the files
+        uses: actions/checkout@v4
+
+      - name: Copy the app folder, without _headers
+        run: |
+          mkdir _site
+          cp -r app/. _site/
+          rm -f _site/_headers
+
+      - name: Set up Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4
