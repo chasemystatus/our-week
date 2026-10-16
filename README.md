@@ -4,6 +4,8 @@ A private weekly planner for two people, built to be used on two iPhones and on 
 Both people edit one shared plan, and a change made on one phone appears on the other almost
 straight away.
 
+**Live demo:** [open it with made-up entries](https://chasemystatus.github.io/our-week/?demo=1). Nothing you add is saved.
+
 ## Why I made it
 
 Eloise, my eldest daughter, had just started a new job and was overwhelmed one Sunday night trying to reconcile her schedule with Toby's. I helped her put together a simple weekly planner, and Our Week grew from that idea so the two of them can keep using it from here on.
